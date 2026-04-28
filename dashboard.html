@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - البيانات المخزنة</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #4ecdc4; margin-bottom: 0.5rem; }
+        .subtitle { color: #888; margin-bottom: 2rem; }
+        .warning {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            color: #ff6b6b;
+        }
+        .entry {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #333;
+        }
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #333;
+        }
+        .entry-id { color: #ff6b6b; font-weight: bold; }
+        .entry-time { color: #888; font-size: 0.85rem; }
+        .user-id {
+            background: #ff6b6b;
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+        .data-section {
+            margin-bottom: 1rem;
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .data-section h4 {
+            color: #4ecdc4;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 0.3rem;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .data-table td {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid #222;
+        }
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table td:first-child {
+            color: #aaa;
+            width: 35%;
+            font-weight: 500;
+        }
+        .data-table td:last-child {
+            color: #fff;
+            word-break: break-all;
+        }
+        .empty { text-align: center; color: #888; padding: 3rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-left: 0.3rem;
+        }
+        .badge-on { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; }
+        .badge-off { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard</h1>
+        <p class="subtitle">البيانات اللي اتخزنت بعد موافقة المستخدمين</p>
+        <div class="warning">
+            <strong>تنبيه:</strong> ده educational demo. كل بيانات هنا جات بعد explicit consent من المستخدم.
+        </div>
+        <div id="entries"></div>
+    </div>
+
+    <script>
+        async function loadEntries() {
+            try {
+                const res = await fetch('/api/entries');
+                const entries = await res.json();
+                const container = document.getElementById('entries');
+
+                if (entries.length === 0) {
+                    container.innerHTML = '<div class="empty">مفيش بيانات متخزنة لسه</div>';
+                    return;
+                }
+
+                container.innerHTML = entries.map(e => {
+                    const ts = new Date(e.timestamp).toLocaleString('ar-EG');
+                    const basic = JSON.parse(e.basic_data || '{}');
+                    const geo = JSON.parse(e.geo_data || '{}');
+                    const cam = JSON.parse(e.cam_data || '{}');
+                    const device = JSON.parse(e.device_data || '{}');
+                    const fingerprint = JSON.parse(e.fingerprint_data || '{}');
+                    const storage = JSON.parse(e.storage_data || '{}');
+                    const browser = JSON.parse(e.browser_data || '{}');
+                    const userId = e.user_id || 'Unknown';
+                    const shortId = userId.length > 20 ? userId.slice(0, 17) + '...' : userId;
+
+                    let html = `
+                        <div class="entry">
+                            <div class="entry-header">
+                                <span class="entry-id">ID: ${e.id}</span>
+                                <span class="user-id" title="${userId}">${shortId}</span>
+                                <span class="entry-time">${ts}</span>
+                            </div>
+                    `;
+
+                    if (e.consented_basic && Object.keys(basic).length) {
+                        html += renderSection('معلومات أساسية', basic);
+                    }
+                    if (e.consented_device && Object.keys(device).length) {
+                        html += renderSection('معلومات الجهاز', device);
+                    }
+                    if (e.consented_cam && Object.keys(cam).length) {
+                        html += renderSection('الكاميرا والمايك', cam);
+                    }
+                    if (e.consented_geo && Object.keys(geo).length) {
+                        html += renderSection('الموقع الجغرافي', geo);
+                    }
+                    if (e.consented_fingerprint && Object.keys(fingerprint).length) {
+                        html += renderSection('بصمة المتصفح', fingerprint);
+                    }
+                    if (e.consented_storage && Object.keys(storage).length) {
+                        html += renderSection('التخزين', storage);
+                    }
+                    if (e.consented_browser && Object.keys(browser).length) {
+                        html += renderSection('معلومات المتصفح', browser);
+                    }
+
+                    html += '</div>';
+                    return html;
+                }).join('');
+            } catch (err) {
+                document.getElementById('entries').innerHTML = '<div class="empty">فشل في تحميل البيانات</div>';
+            }
+        }
+
+        function renderSection(title, data) {
+            const rows = Object.entries(data).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+            return `
+                <div class="data-section">
+                    <h4>${title}</h4>
+                    <table class="data-table">${rows}</table>
+                </div>
+            `;
+        }
+
+        loadEntries();
+        setInterval(loadEntries, 5000);
+    </script>
+</body>
+</html>
